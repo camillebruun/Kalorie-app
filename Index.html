@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Kalorie- & Vægttabs-App</title>
+  <!-- Chart.js til Vægtgraf -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --primary: #2e7d32;
+      --primary-light: #e8f5e9;
+      --water-color: #0288d1;
+      --water-light: #e1f5fe;
+      --accent: #ff9800;
+      --dark: #2c3e50;
+      --bg: #f4f6f8;
+      --card: #ffffff;
+    }
+
+    body {
+      font-family: 'Arial Extended', 'Helvetica Neue', sans-serif;
+      letter-spacing: 1.5px;
+      background-color: var(--bg);
+      color: var(--dark);
+      margin: 0;
+      padding: 15px;
+    }
+
+    .app-container {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    /* Centreret forsidebillede */
+    .hero-image {
+      display: block;
+      margin: 0 auto 20px auto;
+      max-width: 100%;
+      height: 180px;
+      object-fit: cover;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      text-align: center;
+      font-size: 22px;
+      margin-bottom: 20px;
+      color: var(--dark);
+    }
+
+    /* Navigation Tabs */
+    .nav-tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 20px;
+      overflow-x: auto;
+      padding-bottom: 5px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 12px 6px;
+      background: #e0e0e0;
+      border: none;
+      border-radius: 8px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: bold;
+      cursor: pointer;
+      color: #555;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    /* Tab Sections */
+    .tab-content {
+      display: none;
+      background: var(--card);
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #666;
+    }
+
+    input, select, button {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-sizing: border-box;
+      font-size: 14px;
+      letter-spacing: 1px;
+    }
+
+    button.btn-action {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      transition: background 0.2s;
+    }
+
+    button.btn-action:hover {
+      background-color: #1b5e20;
+    }
+
+    /* Dashboard Status */
+    .dashboard-summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .summary-card {
+      background: var(--primary-light);
+      padding: 12px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .summary-card h4 {
+      margin: 0;
+      font-size: 10px;
+      text-transform: uppercase;
+      color: #555;
+    }
+
+    .summary-card p {
+      margin: 5px 0 0 0;
+      font-size: 18px;
+      font-weight: bold;
+      color: var(--primary);
+    }
+
+    /* Image Upload Preview */
+    .upload-zone {
+      border: 2px dashed #bbb;
+      padding: 20px;
+      text-align: center;
+      border-radius: 8px;
+      cursor: pointer;
+      background: #fafafa;
+      margin-bottom: 15px;
+    }
+
+    .img-preview {
+      max-width: 100%;
+      max-height: 200px;
+      border-radius: 8px;
+      margin-top: 10px;
+      display: none;
+    }
+
+    .log-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+      font-size: 13px;
+    }
+
+    /* Vand Tracker Styling */
+    .water-progress-bar {
+      width: 100%;
+      height: 20px;
+      background-color: #e0e0e0;
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 15px 0;
+    }
+
+    .water-progress-fill {
+      height: 100%;
+      width: 0%;
+      background-color: var(--water-color);
+      transition: width 0.3s ease;
+    }
+
+    .quick-water-btns {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .quick-water-btns button {
+      background-color: var(--water-light);
+      color: var(--water-color);
+      border: 1px solid var(--water-color);
+      font-weight: bold;
+    }
+
+    .quick-water-btns button:hover {
+      background-color: var(--water-color);
+      color: white;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <img src="https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=700&q=80" alt="Sund Livsstil" class="hero-image">
+
+    <h1>Kalorie- & Vægt-Tracker</h1>
+
+    <!-- Navigationsfaneblade -->
+    <div class="nav-tabs">
+      <button class="tab-btn active" onclick="openTab('profil')">1. Profil</button>
+      <button class="tab-btn" onclick="openTab('kost')">2. Kost & AI</button>
+      <button class="tab-btn" onclick="openTab('motion')">3. Motion</button>
+      <button class="tab-btn" onclick="openTab('vaegt')">4. Vægt</button>
+      <button class="tab-btn" onclick="openTab('vand')">5. Vand</button>
+    </div>
+
+    <!-- TAB 1: PROFIL & BEREGNING -->
+    <div id="profil" class="tab-content active">
+      <h2>Dine Oplysninger</h2>
+      <form id="profileForm">
+        <div class="form-group">
+          <label>Køn</label>
+          <select id="gender">
+            <option value="female" selected>Kvinde</option>
+            <option value="male">Mand</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Alder (år)</label>
+          <input type="number" id="age" value="34" required>
+        </div>
+        <div class="form-group">
+          <label>Højde (cm)</label>
+          <input type="number" id="height" value="164" required>
+        </div>
+        <div class="form-group">
+          <label>Nuværende Vægt (kg)</label>
+          <input type="number" id="weight" value="71" step="0.1" required>
+        </div>
+        <div class="form-group">
+          <label>Aktivitetsniveau i hverdagen</label>
+          <select id="activity">
+            <option value="1.2">Stillesiddende</option>
+            <option value="1.375">Let aktiv</option>
+            <option value="1.5" selected>Moderat aktiv (f.eks. mor til 3)</option>
+            <option value="1.725">Meget aktiv</option>
+          </select>
+        </div>
+        <button type="submit" class="btn-action">Gem & Opdatér Behov</button>
+      </form>
+    </div>
+
+    <!-- TAB 2: KOST & AI FOTO-ANALYSATOR -->
+    <div id="kost" class="tab-content">
+      <div class="dashboard-summary">
+        <div class="summary-card">
+          <h4>Mål</h4>
+          <p id="targetDisplay">1600 kcal</p>
+        </div>
+        <div class="summary-card">
+          <h4>Spist</h4>
+          <p id="eatenDisplay">0 kcal</p>
+        </div>
+        <div class="summary-card">
+          <h4>Tilbage</h4>
+          <p id="remainingDisplay">1600 kcal</p>
+        </div>
+      </div>
+
+      <h2>Upload Billede af Måltid</h2>
+      <div class="upload-zone" onclick="document.getElementById('foodImage').click()">
+        <p>📷 Klik her for at uploade mad-billede</p>
+        <input type="file" id="foodImage" accept="image/*" style="display:none" onchange="previewAndAnalyze(event)">
+        <img id="previewImg" class="img-preview" alt="Mad preview">
+      </div>
+
+      <div id="aiAnalysis" style="display:none; background: #fff8e1; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+        <h3 style="margin-top:0; font-size:14px;">🤖 AI Billedanalyse (Gæt):</h3>
+        <p id="aiResultText" style="font-size:13px;"></p>
+        <div class="form-group">
+          <label>Juster Kalorier manuelt hvis nødvendigt:</label>
+          <input type="number" id="adjustedKcal">
+        </div>
+        <button class="btn-action" onclick="logFood()">Tilføj til Dagens Indtag</button>
+      </div>
+
+      <h3>Dagens Måltider</h3>
+      <div id="foodLog"></div>
+    </div>
+
+    <!-- TAB 3: MOTION -->
+    <div id="motion" class="tab-content">
+      <h2>Modregn Motion</h2>
+      <p style="font-size: 12px; color: #666;">Motion trækkes fra dit kalorieregnskab, så du får flere kalorier at spise for.</p>
+      <form id="workoutForm">
+        <div class="form-group">
+          <label>Aktivitet</label>
+          <input type="text" id="workoutName" placeholder="F.eks. Rask gåtur med klapvogn" required>
+        </div>
+        <div class="form-group">
+          <label>Forbrændte Kalorier (kcal)</label>
+          <input type="number" id="workoutKcal" placeholder="F.eks. 250" required>
+        </div>
+        <button type="submit" class="btn-action">Log Motion</button>
+      </form>
+
+      <h3 style="margin-top:20px;">Dagens Motion</h3>
+      <div id="workoutLog"></div>
+    </div>
+
+    <!-- TAB 4: VÆGT-TRACKER & GRAF -->
+    <div id="vaegt" class="tab-content">
+      <h2>Udvikling i Vægt</h2>
+      <form id="weightForm" style="margin-bottom: 20px;">
+        <div class="form-group">
+          <label>Registrer ny vægt (kg)</label>
+          <input type="number" id="newWeight" step="0.1" required>
+        </div>
+        <button type="submit" class="btn-action">Tilføj Vægt-Måling</button>
+      </form>
+
+      <canvas id="weightChart" width="400" height="250"></canvas>
+    </div>
+
+    <!-- TAB 5: VAND-TRACKER -->
+    <div id="vand" class="tab-content">
+      <h2>Track Dit Vandindtag 💧</h2>
+      
+      <div class="summary-card" style="background: var(--water-light); margin-bottom: 15px;">
+        <h4 style="color: #0277bd;">Anbefalet Daglige Vandindtag</h4>
+        <p id="waterGoalDisplay" style="color: var(--water-color);">2.5 L</p>
+      </div>
+
+      <p style="text-align: center; font-size: 14px; margin-bottom: 5px;">
+        Drikket i dag: <b id="waterLoggedDisplay">0</b> ml / <span id="waterGoalMlDisplay">2500</span> ml
+      </p>
+
+      <div class="water-progress-bar">
+        <div class="water-progress-fill" id="waterProgress"></div>
+      </div>
+
+      <h3>Hurtig Tilføjelse</h3>
+      <div class="quick-water-btns">
+        <button onclick="addWater(250)">+250 ml (Glas)</button>
+        <button onclick="addWater(500)">+500 ml (Flaske)</button>
+        <button onclick="addWater(750)">+750 ml</button>
+      </div>
+
+      <form id="customWaterForm" style="margin-top: 15px;">
+        <div class="form-group">
+          <label>Andet beløb (ml)</label>
+          <input type="number" id="customWaterMl" placeholder="F.eks. 330">
+        </div>
+        <button type="submit" class="btn-action" style="background-color: var(--water-color);">Tilføj Vand</button>
+      </form>
+    </div>
+
+  </div>
+
+  <script>
+    // Tilstand (State)
+    let userProfile = { bmr: 1399, tdee: 2099, target: 1599, weight: 71 };
+    let totalEaten = 0;
+    let totalBurned = 0;
+    let totalWaterMl = 0;
+    let currentAiEstimate = 0;
+    let weightHistory = [
+      { date: '01/09', weight: 72.0 },
+      { date: '02/09', weight: 71.5 },
+      { date: '04/09', weight: 71.0 }
+    ];
+
+    // BEREGN DGL. VANDBEHOV (ca. 35 ml pr kg)
+    function calculateWaterGoal() {
+      return Math.round(userProfile.weight * 35);
+    }
+
+    // Faneblads-skift
+    function openTab(tabName) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(tabName).classList.add('active');
+      event.currentTarget.classList.add('active');
+      if(tabName === 'vaegt') renderChart();
+      if(tabName === 'vand') updateWaterDisplay();
+    }
+
+    // Tab 1: Profilberegning
+    document.getElementById('profileForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const gender = document.getElementById('gender').value;
+      const age = parseFloat(document.getElementById('age').value);
+      const height = parseFloat(document.getElementById('height').value);
+      const weight = parseFloat(document.getElementById('weight').value);
+      const activity = parseFloat(document.getElementById('activity').value);
+
+      userProfile.weight = weight;
+      let bmr = (10 * weight) + (6.25 * height) - (5 * age) + (gender === 'male' ? 5 : -161);
+      let tdee = bmr * activity;
+      userProfile.target = Math.round(tdee - 500);
+
+      updateDashboard();
+      updateWaterDisplay();
+      alert('Din profil og mål er opdateret!');
+    });
+
+    // Tab 2: AI Billed-Gæt (Simuleret AI API)
+    function previewAndAnalyze(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const preview = document.getElementById('previewImg');
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+
+        // Simuleret AI-respons
+        document.getElementById('aiAnalysis').style.display = 'block';
+        document.getElementById('aiResultText').innerText = 'Analyseret Måltid: Kyllingesalat med olivenolie og avocado (~450 kcal)';
+        currentAiEstimate = 450;
+        document.getElementById('adjustedKcal').value = currentAiEstimate;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function logFood() {
+      const kcal = parseInt(document.getElementById('adjustedKcal').value);
+      totalEaten += kcal;
+      
+      const log = document.getElementById('foodLog');
+      log.innerHTML += `<div class="log-item"><span>🥗 Måltid (Foto)</span><b>+${kcal} kcal</b></div>`;
+      
+      document.getElementById('aiAnalysis').style.display = 'none';
+      document.getElementById('previewImg').style.display = 'none';
+      updateDashboard();
+    }
+
+    // Tab 3: Motion
+    document.getElementById('workoutForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const name = document.getElementById('workoutName').value;
+      const kcal = parseInt(document.getElementById('workoutKcal').value);
+
+      totalBurned += kcal;
+      const log = document.getElementById('workoutLog');
+      log.innerHTML += `<div class="log-item"><span>🏃 ${name}</span><b style="color:#2e7d32;">-${kcal} kcal</b></div>`;
+
+      document.getElementById('workoutName').value = '';
+      document.getElementById('workoutKcal').value = '';
+      updateDashboard();
+    });
+
+    function updateDashboard() {
+      document.getElementById('targetDisplay').innerText = userProfile.target + ' kcal';
+      document.getElementById('eatenDisplay').innerText = totalEaten + ' kcal';
+      const remaining = userProfile.target - totalEaten + totalBurned;
+      document.getElementById('remainingDisplay').innerText = remaining + ' kcal';
+    }
+
+    // Tab 4: Vægtgraf (Chart.js)
+    let myChart = null;
+    function renderChart() {
+      const ctx = document.getElementById('weightChart').getContext('2d');
+      if (myChart) myChart.destroy();
+
+      myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: weightHistory.map(w => w.date),
+          datasets: [{
+            label: 'Vægt (kg)',
+            data: weightHistory.map(w => w.weight),
+            borderColor: '#2e7d32',
+            backgroundColor: 'rgba(46, 125, 50, 0.1)',
+            fill: true,
+            tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+
+    document.getElementById('weightForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const w = parseFloat(document.getElementById('newWeight').value);
+      const today = new Date().toLocaleDateString('da-DK', { day: '2-digit', month: '2-digit' });
+      
+      weightHistory.push({ date: today, weight: w });
+      renderChart();
+      document.getElementById('newWeight').value = '';
+    });
+
+    // Tab 5: Vand-Tracker Funktioner
+    function addWater(ml) {
+      totalWaterMl += ml;
+      updateWaterDisplay();
+    }
+
+    document.getElementById('customWaterForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const customMl = parseInt(document.getElementById('customWaterMl').value);
+      if (customMl > 0) {
+        addWater(customMl);
+        document.getElementById('customWaterMl').value = '';
+      }
+    });
+
+    function updateWaterDisplay() {
+      const goalMl = calculateWaterGoal();
+      document.getElementById('waterGoalDisplay').innerText = (goalMl / 1000).toFixed(1) + ' L';
+      document.getElementById('waterGoalMlDisplay').innerText = goalMl;
+      document.getElementById('waterLoggedDisplay').innerText = totalWaterMl;
+
+      const percentage = Math.min(100, Math.round((totalWaterMl / goalMl) * 100));
+      document.getElementById('waterProgress').style.width = percentage + '%';
+    }
+
+    // Initialisér visning
+    updateWaterDisplay();
+  </script>
+</body>
+</html>
